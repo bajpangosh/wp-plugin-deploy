@@ -1,6 +1,6 @@
 # WordPress Plugin Deployment Action
 
-[![Deploy Plugin](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/deploy.yml)
+[![Deploy Plugin](https://github.com/bajpangosh/wp-plugin-deploy/actions/workflows/deploy.yml/badge.svg)](https://github.com/bajpangosh/wp-plugin-deploy/actions/workflows/deploy.yml)
 
 🚀 A GitHub Action for automatically deploying WordPress plugins to your production server using SSH and rsync.
 
