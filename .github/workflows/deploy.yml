@@ -1,0 +1,82 @@
+name: Deploy Plugin
+
+on:
+  push:
+    branches: [main]
+
+env:
+  SSH_USER: ${{ secrets.SSH_USER }}
+  SSH_HOST: ${{ secrets.SSH_HOST }}
+  PLUGIN_DIR: ${{ secrets.PLUGIN_DIR }}
+
+jobs:
+  test-connection:
+    name: Test Server Connection
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Set SSH Connection
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/deploy.key
+          chmod 600 ~/.ssh/deploy.key
+          cat >>~/.ssh/config <<END
+          Host remote_server
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/deploy.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Test SSH Connection
+        run: |
+          if ssh remote_server "echo 'Connection successful!'"; then
+            echo "✅ SSH connection test passed"
+          else
+            echo "❌ SSH connection test failed"
+            exit 1
+          fi
+
+      - name: Test WordPress Directory Access
+        run: |
+          if ssh remote_server "[ -d $PLUGIN_DIR ]"; then
+            echo "✅ WordPress plugins directory exists and is accessible"
+          else
+            echo "❌ WordPress plugins directory not found or not accessible"
+            exit 1
+          fi
+
+  deploy:
+    name: Deploy WordPress Plugin
+    needs: test-connection
+    runs-on: ubuntu-20.04
+    if: success()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set SSH Connection
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/deploy.key
+          chmod 600 ~/.ssh/deploy.key
+          cat >>~/.ssh/config <<END
+          Host remote_server
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/deploy.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Sync plugin files
+        run: |
+          # Use rsync with SSH configuration
+          rsync --delete -avO -e "ssh -i ~/.ssh/deploy.key -o StrictHostKeyChecking=no" \
+            --exclude /deploy_key \
+            --exclude /.git/ \
+            --exclude /.github/ \
+            ./ ${{ env.SSH_USER }}@${{ env.SSH_HOST }}:${{ env.PLUGIN_DIR }}/
